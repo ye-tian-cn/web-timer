@@ -13,7 +13,7 @@
     <style>
         /* Base reset targeting mobile device interactions */
         * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
-        body { margin: 0; background-color: #000; color: #00ff00; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+        body { margin: 0; background-color: #000; color: #00ff00; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; transform-origin: center center; transition: transform 0.3s ease; }
         
         /* Main layout controller framework centering variables */
         .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; }
@@ -31,9 +31,9 @@
         #start-btn { background-color: #34c759; color: white; }
         #cancel-btn { background-color: #ff3b30; color: white; opacity: 0.5; pointer-events: none; }
 
-        /* Fullscreen button styling */
-        #fullscreen-btn { position: fixed; top: 20px; right: 20px; background-color: #007aff; color: white; font-size: 4vw; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; z-index: 1000; opacity: 0.7; transition: opacity 0.3s; }
-        #fullscreen-btn:hover { opacity: 1; }
+        /* Rotation button styling */
+        #rotate-btn { position: fixed; top: 20px; right: 20px; background-color: #007aff; color: white; font-size: 4vw; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; z-index: 1000; opacity: 0.7; transition: opacity 0.3s; }
+        #rotate-btn:hover { opacity: 1; }
 
         /* Core: 10-second automatic screen dimming overlay shield layer */
         #dim-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; opacity: 0; pointer-events: none; transition: opacity 1s; z-index: 999; }
@@ -44,8 +44,8 @@
     <!-- Transparent interaction shield handling screen fading adjustments -->
     <div id="dim-overlay"></div>
 
-    <!-- Fullscreen toggle button -->
-    <button id="fullscreen-btn">⛶ Fullscreen</button>
+    <!-- Rotate display button -->
+    <button id="rotate-btn">↻ Rotate</button>
 
     <div class="container">
         <!-- Interactive Editing Fields (Hidden when countdown runs active) -->
@@ -84,7 +84,7 @@
         const cancelBtn = document.getElementById('cancel-btn');
         const dimOverlay = document.getElementById('dim-overlay');
         const alarmSound = document.getElementById('alarm-sound');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const rotateBtn = document.getElementById('rotate-btn');
 
         // Function to stop alarm sound and reset
         function stopAlarm() {
@@ -96,52 +96,22 @@
             }
         }
 
-        // --- Fullscreen functionality ---
-        fullscreenBtn.addEventListener('click', (e) => {
+        // --- Rotation functionality ---
+        let rotationDegrees = 0;
+        rotateBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const elem = document.documentElement;
+            rotationDegrees = (rotationDegrees + 90) % 360;
+            document.body.style.transform = `rotate(${rotationDegrees}deg)`;
 
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                // Enter fullscreen
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen();
-                } else if (elem.webkitRequestFullscreen) { // iOS Safari
-                    elem.webkitRequestFullscreen();
-                } else if (elem.mozRequestFullScreen) { // Firefox
-                    elem.mozRequestFullScreen();
-                } else if (elem.msRequestFullscreen) { // IE/Edge
-                    elem.msRequestFullscreen();
-                }
-                fullscreenBtn.innerText = '⛶ Exit Fullscreen';
+            // Adjust dimensions when rotated 90 or 270 degrees
+            if (rotationDegrees === 90 || rotationDegrees === 270) {
+                document.body.style.width = '100vh';
+                document.body.style.height = '100vw';
             } else {
-                // Exit fullscreen
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) { // iOS Safari
-                    document.webkitExitFullscreen();
-                } else if (document.mozCancelFullScreen) { // Firefox
-                    document.mozCancelFullScreen();
-                } else if (document.msExitFullscreen) { // IE/Edge
-                    document.msExitFullscreen();
-                }
-                fullscreenBtn.innerText = '⛶ Fullscreen';
+                document.body.style.width = '100vw';
+                document.body.style.height = '100vh';
             }
         });
-
-        // Update button text when fullscreen changes
-        document.addEventListener('fullscreenchange', updateFullscreenButton);
-        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-        document.addEventListener('mozfullscreenchange', updateFullscreenButton);
-        document.addEventListener('msfullscreenchange', updateFullscreenButton);
-
-        function updateFullscreenButton() {
-            if (document.fullscreenElement || document.webkitFullscreenElement || 
-                document.mozFullScreenElement || document.msFullscreenElement) {
-                fullscreenBtn.innerText = '⛶ Exit Fullscreen';
-            } else {
-                fullscreenBtn.innerText = '⛶ Fullscreen';
-            }
-        }
 
         // --- 1. Prevent Phone Sleep (Screen Wake Lock API) ---
         async function requestWakeLock() {

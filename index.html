@@ -244,11 +244,16 @@
                         // Intercept empty countdown configurations cleanly
                         if (totalSeconds <= 0) return;
 
-                        // Unlock audio for Safari/iOS by playing and immediately pausing
-                        alarmSound.play().then(() => {
+                        // Unlock audio for Safari/iOS - load the audio immediately and pause it
+                        // This ensures audio context is unlocked without playing sound
+                        try {
+                            alarmSound.load(); // Reset the audio element
+                            alarmSound.play();
                             alarmSound.pause();
                             alarmSound.currentTime = 0;
-                        }).catch(() => { });
+                        } catch (err) {
+                            console.log('Audio unlock failed:', err);
+                        }
 
                         // Dynamically swap user focus fields panels
                         editMode.style.display = 'none';

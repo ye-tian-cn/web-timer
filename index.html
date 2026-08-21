@@ -81,7 +81,7 @@
         // --- DATA ARCHITECTURE DEFINITIONS ---
         let timer = null;                // References the active 1-second counting ticking interval thread
         let idleTimer = null;            // References the 10-second structural inactivity monitor thread
-        let soundTimeoutTimer = null;    // References the 1-minute absolute absolute sound safety ceiling cutoff tracking block
+        let soundTimeoutTimer = null;    // References the 1-minute absolute sound safety ceiling cutoff tracking block
         let totalSeconds = 0;            // Stores the remaining calculation time as an integer total value of seconds
         let isRunning = false;           // State flag indicating if a countdown is active
         let isAlarmSounding = false;     // State flag indicating if the phone is currently ringing out
@@ -138,8 +138,8 @@
             }
 
             if (!isRunning) {
-                // RUNTIME PROCESSING ON FRESH SESSION LAUNCH
-                if (startBtn.innerText === "START") {
+                // RUNTIME PROCESSING ON FRESH SESSION LAUNCH OR RESUME
+                if (editMode.style.display !== 'none') {
                     // Extract total numerical input boundaries from duration input wheels boxes values
                     const h = parseInt(document.getElementById('hrs').value) || 0;
                     const m = parseInt(document.getElementById('mins').value) || 0;
@@ -152,10 +152,10 @@
                     // Swap visual views layout fields frames profiles instantly
                     editMode.style.display = 'none';
                     display.style.display = 'block';
-                    cancelBtn.style.opacity = '1';
-                    cancelBtn.style.pointerEvents = 'auto'; // Make cancel button clickable
                 }
 
                 // Transform active button layout representation parameters over to tracking state profile properties
                 isRunning = true;
                 startBtn.innerText = "PAUSE";
+                startBtn.style.backgroundColor = "#ff9500"; // Dynamic orange warning color transformation
+                cancelBtn.style.opacity = '1';

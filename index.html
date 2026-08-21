@@ -274,11 +274,11 @@
                     setTimeout(() => osc.stop(), 2000);
                 });
 
-                // Stop alarm after 1 minute (60000ms)
+                // Stop alarm after 30 seconds (30000ms)
                 alarmTimeout = setTimeout(() => {
                     alarmSound.pause();
                     alarmSound.currentTime = 0;
-                }, 60000);
+                }, 30000);
             } else {
                 totalSeconds--;
                 updateDisplay();

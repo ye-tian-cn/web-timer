@@ -136,6 +136,12 @@
                         // Intercept empty countdown configurations cleanly
                         if (totalSeconds <= 0) return;
 
+                        // Unlock audio for Safari/iOS by playing and immediately pausing
+                        alarmSound.play().then(() => {
+                            alarmSound.pause();
+                            alarmSound.currentTime = 0;
+                        }).catch(() => {});
+
                         // Dynamically swap user focus fields panels
                         editMode.style.display = 'none';
                         display.style.display = 'block';

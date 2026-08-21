@@ -10,6 +10,8 @@
     <title>Minimalist Full-Screen Timer</title>
     <!-- Linking the PWA configuration manifesto for safe offline storage -->
     <link rel="manifest" href="manifest.json">
+    <!-- NoSleep.js library to prevent screen lock on iOS -->
+    <script src="https://cdn.jsdelivr.net/npm/nosleep.js@0.12.0/dist/NoSleep.min.js"></script>
     <style>
         /* Base reset targeting mobile device interactions */
         * {
@@ -140,6 +142,14 @@
         let wakeLock = null;
         let alarmTimeout = null;
 
+        // Initialize NoSleep.js to prevent screen lock
+        let noSleep = null;
+        try {
+            noSleep = new NoSleep();
+        } catch (err) {
+            console.log('NoSleep.js not available:', err);
+        }
+
         // Document Object Model node maps
         const display = document.getElementById('display');
         const editMode = document.getElementById('edit-mode');
@@ -158,17 +168,45 @@
             }
         }
 
-        // --- 1. Prevent Phone Sleep (Screen Wake Lock API) ---
+        // --- 1. Prevent Phone Sleep (Screen Wake Lock API + NoSleep.js) ---
         async function requestWakeLock() {
+            // Enable NoSleep.js for iOS (most reliable)
+            if (noSleep) {
+                try {
+                    noSleep.enable();
+                    console.log('NoSleep enabled');
+                } catch (err) {
+                    console.log('NoSleep enable failed:', err);
+                }
+            }
+
+            // Also try Wake Lock API for Android/Desktop
             try {
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock enabled');
                 }
-            } catch (err) { console.log('Wake Lock assertion rejected:', err); }
+            } catch (err) { 
+                console.log('Wake Lock assertion rejected:', err); 
+            }
         }
 
         function releaseWakeLock() {
-            if (wakeLock) { wakeLock.release(); wakeLock = null; }
+            // Disable NoSleep.js
+            if (noSleep) {
+                try {
+                    noSleep.disable();
+                    console.log('NoSleep disabled');
+                } catch (err) {
+                    console.log('NoSleep disable failed:', err);
+                }
+            }
+
+            // Release Wake Lock
+            if (wakeLock) { 
+                wakeLock.release(); 
+                wakeLock = null; 
+            }
         }
 
         // --- 2. Smart 10-Second Auto Dimming Logic ---

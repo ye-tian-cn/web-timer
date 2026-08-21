@@ -58,7 +58,8 @@
 
     <div class="container">
         <!-- EDIT STATE: Text fields containing Hours, Minutes, and Seconds inputs -->
-        <div id="edit-mode">
+        <!-- FIXED: Explicitly set display: flex in the inline style so JavaScript can read it correctly on first load -->
+        <div id="edit-mode" style="display: flex;">
             <input type="number" id="hrs" value="0" min="0" max="23">
             <input type="number" id="mins" value="5" min="0" max="59">
             <input type="number" id="secs" value="0" min="0" max="59">
@@ -131,15 +132,16 @@
         startBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Stops touch propagation tracking loops to avoid resetting the dim timers on button touch tracking pipelines
             
-            // ACTION CAPTURE: If the alarm sound is playing, clicking this button immediately executes reset behaviors
+            // ACTION CAPTURE: If the alarm sound is playing, clicking this button immediately executes stop/reset behaviors
             if (isAlarmSounding) {
                 stopAlarmAndReset();
                 return;
             }
 
             if (!isRunning) {
-                // RUNTIME PROCESSING ON FRESH SESSION LAUNCH OR RESUME
-                if (editMode.style.display !== 'none') {
+                // RUNTIME PROCESSING ON FRESH SESSION LAUNCH
+                // FIXED: Changed condition to explicitly check if editMode is currently visible to calculate input values correctly
+                if (editMode.style.display === 'flex') {
                     // Extract total numerical input boundaries from duration input wheels boxes values
                     const h = parseInt(document.getElementById('hrs').value) || 0;
                     const m = parseInt(document.getElementById('mins').value) || 0;
@@ -155,7 +157,3 @@
                 }
 
                 // Transform active button layout representation parameters over to tracking state profile properties
-                isRunning = true;
-                startBtn.innerText = "PAUSE";
-                startBtn.style.backgroundColor = "#ff9500"; // Dynamic orange warning color transformation
-                cancelBtn.style.opacity = '1';

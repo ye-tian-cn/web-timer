@@ -167,12 +167,14 @@
             clearInterval(timer);
             stopAlarm();
             isRunning = false;
-            
+
             // Clean view restoration updates mapping
             editMode.style.display = 'flex';
             display.style.display = 'none';
             startBtn.innerText = "START";
             startBtn.style.backgroundColor = "#34c759";
+            startBtn.style.display = 'block'; // Show START button again
+            cancelBtn.innerText = 'CANCEL'; // Reset button text
             cancelBtn.style.opacity = '0.5';
             cancelBtn.style.pointerEvents = 'none';
             releaseWakeLock();
@@ -181,6 +183,11 @@
         function tick() {
             if (totalSeconds <= 0) {
                 clearInterval(timer);
+                isRunning = false;
+
+                // Hide START button and change CANCEL to CONFIRM
+                startBtn.style.display = 'none';
+                cancelBtn.innerText = 'CONFIRM';
 
                 // Fire audio asset alert with local synthesized browser audio context fallback tracking security overrides
                 alarmSound.play().catch(() => {

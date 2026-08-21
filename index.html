@@ -58,7 +58,6 @@
 
     <div class="container">
         <!-- EDIT STATE: Text fields containing Hours, Minutes, and Seconds inputs -->
-        <!-- FIXED: Explicitly set display: flex in the inline style so JavaScript can read it correctly on first load -->
         <div id="edit-mode" style="display: flex;">
             <input type="number" id="hrs" value="0" min="0" max="23">
             <input type="number" id="mins" value="5" min="0" max="59">
@@ -86,6 +85,7 @@
         let totalSeconds = 0;            // Stores the remaining calculation time as an integer total value of seconds
         let isRunning = false;           // State flag indicating if a countdown is active
         let isAlarmSounding = false;     // State flag indicating if the phone is currently ringing out
+        let isTimeSet = false;           // FIXED: Brand new state flag tracking if values have already been extracted from boxes
         let wakeLock = null;             // Stores the hardware engine lock preventing the iPhone from locking down screen execution
 
         // --- DOCUMENT LINK REGISTRY FOR HTML NODE HANDLING ---
@@ -140,8 +140,8 @@
 
             if (!isRunning) {
                 // RUNTIME PROCESSING ON FRESH SESSION LAUNCH
-                // FIXED: Changed condition to explicitly check if editMode is currently visible to calculate input values correctly
-                if (editMode.style.display === 'flex') {
+                // FIXED: We check our true/false tracking flag instead of evaluating tricky CSS style string matches
+                if (!isTimeSet) {
                     // Extract total numerical input boundaries from duration input wheels boxes values
                     const h = parseInt(document.getElementById('hrs').value) || 0;
                     const m = parseInt(document.getElementById('mins').value) || 0;
@@ -154,6 +154,6 @@
                     // Swap visual views layout fields frames profiles instantly
                     editMode.style.display = 'none';
                     display.style.display = 'block';
+                    isTimeSet = true; // Mark state as active so pausing/resuming doesn't overwrite values
                 }
 
-                // Transform active button layout representation parameters over to tracking state profile properties

@@ -2,74 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Ensures web content matches phone screen dimensions and prevents page zooming scaling errors -->
+    
+    <!-- IMPORTANT: Force mobile Safari to match the device width, disable zoom stretching on tapping, and expand into the notch area (viewport-fit=cover) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- Grants standalone full-screen status hiding standard Safari navigation toolbars -->
+    
+    <!-- IMPORTANT: Tells iOS that when this page is added to the home screen, it must open as a full-screen application with NO browser search bars or navigation fields -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <title>Minimalist Full-Screen Timer</title>
-    <!-- Linking the PWA configuration manifesto for safe offline storage -->
+    
+    <!-- IMPORTANT: Connects our app configuration file so the phone knows how to install it and download it for 100% offline usage -->
     <link rel="manifest" href="manifest.json">
+    
     <style>
-        /* Base reset targeting mobile device interactions */
+        /* BASE RESET: Box-sizing layout helps element sizing, user-select: none prevents the text highlighting cursor from breaking your visual interface if you click rapidly */
         * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+        
+        /* THE STAGE BACKGROUND: Deep pitch-black background with bright radioactive system-green color mappings for excellent battery efficiency and dark room reading */
         body { margin: 0; background-color: #000; color: #00ff00; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
         
-        /* Main layout controller framework centering variables */
+        /* CONTAINER GRID: Center everything on the iPhone display perfectly vertically and horizontally across 100% of the active window space view boundaries */
         .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; }
         
-        /* Ultra large high-contrast display numbers */
+        /* MONSTER DISPLAY FONT: Large numerical text display dynamically sized via view-width (18vw). Font-variant-numeric: tabular-nums forces uniform width for all numbers so text doesn't shake as it ticks down */
         #display { font-size: 18vw; font-variant-numeric: tabular-nums; font-weight: bold; margin-bottom: 50px; transition: opacity 0.5s; }
         
-        /* Grid container parsing editing wheels layout inputs */
+        /* INPUT LAYOUT GROUP: Arranges input blocks horizontally with smooth rounded edge boxes and large easily editable text fields styles */
         #edit-mode { display: flex; gap: 10px; margin-bottom: 50px; }
         input { background: #222; color: #fff; border: none; font-size: 8vw; width: 18vw; text-align: center; border-radius: 10px; padding: 10px; }
         
-        /* Button UI elements styling framework profiles */
+        /* CONTROL LAYOUT BUTTONS FRAMEWORK: Generates large tap targets appropriate for touch interaction templates */
         .btn-group { display: flex; gap: 40px; }
         button { font-size: 5vw; padding: 15px 40px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        #start-btn { background-color: #34c759; color: white; }
+        #start-btn { background-color: #34c759; color: white; transition: background-color 0.3s; }
+        
+        /* CANCEL BUTTON RESTRAINT: Starts at 50% opacity and blocks touches (pointer-events: none) so you can't click "Cancel" unless a countdown is running */
         #cancel-btn { background-color: #ff3b30; color: white; opacity: 0.5; pointer-events: none; }
         
-        /* Core: 10-second automatic screen dimming overlay shield layer */
+        /* SMART DIMMING LAYER SCREEN: A hidden dark filter blocking 100% width and height. By default opacity is 0 (invisible). We animate it over 1 second to 0.85 opacity to dim down backlight panels */
         #dim-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; opacity: 0; pointer-events: none; transition: opacity 1s; z-index: 999; }
+
+        /* ACTIVE EMERGENCY ALARM FLASH ANIMATION: Rapidly shifts background button status colors back and forth between light red and dark red every second when the timer finishes */
+        .alarm-active { animation: flash-red 1s infinite alternate; }
+        @keyframes flash-red {
+            from { background-color: #ff3b30; }
+            to { background-color: #8b0000; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Transparent interaction shield handling screen fading adjustments -->
+    <!-- This invisible shield controls screen dimming when the user doesn't touch the display for 10 seconds -->
     <div id="dim-overlay"></div>
 
     <div class="container">
-        <!-- Interactive Editing Fields (Hidden when countdown runs active) -->
+        <!-- EDIT STATE: Text fields containing Hours, Minutes, and Seconds inputs -->
         <div id="edit-mode">
             <input type="number" id="hrs" value="0" min="0" max="23">
             <input type="number" id="mins" value="5" min="0" max="59">
             <input type="number" id="secs" value="0" min="0" max="59">
         </div>
 
-        <!-- High-Contrast Massive Timer Display Layer -->
+        <!-- COUNTDOWN STATE: The ultra large timer display layout layer (hidden until START is clicked) -->
         <div id="display" style="display: none;">00:05:00</div>
 
-        <!-- Execution Action Toggles Frame -->
+        <!-- CONTROL BUTTON INTERFACES -->
         <div class="btn-group">
             <button id="start-btn">START</button>
             <button id="cancel-btn">CANCEL</button>
         </div>
     </div>
 
-    <!-- Embedded audio engine backing backup alert chimes -->
+    <!-- AUDIO ENGINE: Pulls radar.mp3 directly out of your offline storage database folder and runs loops automatically -->
     <audio id="alarm-sound" src="radar.mp3" loop></audio>
 
     <script>
-        // Core execution runtime reference states
-        let timer = null;
-        let idleTimer = null;
-        let totalSeconds = 0;
-        let isRunning = false;
-        let wakeLock = null;
+        // --- DATA ARCHITECTURE DEFINITIONS ---
+        let timer = null;                // References the active 1-second counting ticking interval thread
+        let idleTimer = null;            // References the 10-second structural inactivity monitor thread
+        let soundTimeoutTimer = null;    // References the 1-minute absolute absolute sound safety ceiling cutoff tracking block
+        let totalSeconds = 0;            // Stores the remaining calculation time as an integer total value of seconds
+        let isRunning = false;           // State flag indicating if a countdown is active
+        let isAlarmSounding = false;     // State flag indicating if the phone is currently ringing out
+        let wakeLock = null;             // Stores the hardware engine lock preventing the iPhone from locking down screen execution
 
-        // Document Object Model node maps
+        // --- DOCUMENT LINK REGISTRY FOR HTML NODE HANDLING ---
         const display = document.getElementById('display');
         const editMode = document.getElementById('edit-mode');
         const startBtn = document.getElementById('start-btn');
@@ -77,130 +95,67 @@
         const dimOverlay = document.getElementById('dim-overlay');
         const alarmSound = document.getElementById('alarm-sound');
 
-        // --- 1. Prevent Phone Sleep (Screen Wake Lock API) ---
+        // --- FEATURE 1: FORCE CONSTANT SCREEN PRESENTATION (WAKE LOCK API) ---
         async function requestWakeLock() {
             try {
                 if ('wakeLock' in navigator) { 
+                    // Requests hardware focus access so iOS stops the normal automated display lock process
                     wakeLock = await navigator.wakeLock.request('screen'); 
                 }
-            } catch (err) { console.log('Wake Lock assertion rejected:', err); }
+            } catch (err) { console.log('Screen presentation assertion lock skipped by browser rules:', err); }
         }
 
         function releaseWakeLock() { 
+            // Releases hardware control parameters back over to normal operating settings
             if (wakeLock) { wakeLock.release(); wakeLock = null; } 
         }
 
-        // --- 2. Smart 10-Second Auto Dimming Logic ---
+        // --- FEATURE 2: 10-SECOND AUTOMATED SMART OVERLAY SCREEN DIMMING ---
         function resetIdleTimer() {
-            // Restore screen brightness instantaneously
+            // Restore visual layout illumination instantly to full bright output spectrum profiles
             dimOverlay.style.opacity = "0";
             clearTimeout(idleTimer);
             
-            // Trigger 85% opacity black veil filter block after 10 seconds of structural silence
-            idleTimer = setTimeout(() => { 
-                dimOverlay.style.opacity = "0.85"; 
-            }, 10000);
+            // SECURITY OVERRIDE: If the timer finished and your alarm sound is playing, do NOT auto-dim the screen
+            if (isAlarmSounding) return;
+
+            // Sets a timer to trigger an 85% black shield display layer overlay block if no interface touch event occurs for 10000ms (10 seconds)
+            idleTimer = setTimeout(() => { dimOverlay.style.opacity = "0.85"; }, 10000);
         }
 
-        // Global structural view listeners tracking interface engagement
+        // Links global listeners to tap triggers on device glass to catch touches anywhere on screen and wake the system up
         document.body.addEventListener('click', resetIdleTimer);
         document.body.addEventListener('touchstart', resetIdleTimer);
 
-        // --- 3. Core Timer Thread Controls Engine ---
+        // --- FEATURE 3: INTERACTIVE CONTROLLER ACTIONS MECHANISM ---
         startBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Avoid triggering immediate dimming wake cycles on button click
+            e.stopPropagation(); // Stops touch propagation tracking loops to avoid resetting the dim timers on button touch tracking pipelines
+            
+            // ACTION CAPTURE: If the alarm sound is playing, clicking this button immediately executes reset behaviors
+            if (isAlarmSounding) {
+                stopAlarmAndReset();
+                return;
+            }
+
             if (!isRunning) {
-                // Initialize countdown parameters out of standard form variables values data
+                // RUNTIME PROCESSING ON FRESH SESSION LAUNCH
                 if (startBtn.innerText === "START") {
+                    // Extract total numerical input boundaries from duration input wheels boxes values
                     const h = parseInt(document.getElementById('hrs').value) || 0;
                     const m = parseInt(document.getElementById('mins').value) || 0;
                     const s = parseInt(document.getElementById('secs').value) || 0;
                     totalSeconds = (h * 3600) + (m * 60) + s;
 
-                    // Intercept empty countdown configurations cleanly
+                    // Safety escape rule: Block operation if the inputs calculate to 0 seconds duration
                     if (totalSeconds <= 0) return;
 
-                    // Dynamically swap user focus fields panels
+                    // Swap visual views layout fields frames profiles instantly
                     editMode.style.display = 'none';
                     display.style.display = 'block';
                     cancelBtn.style.opacity = '1';
-                    cancelBtn.style.pointerEvents = 'auto';
+                    cancelBtn.style.pointerEvents = 'auto'; // Make cancel button clickable
                 }
 
-                // Switch action toggle status definitions over to PAUSE runtime structures
+                // Transform active button layout representation parameters over to tracking state profile properties
                 isRunning = true;
                 startBtn.innerText = "PAUSE";
-                startBtn.style.backgroundColor = "#ff9500";
-                
-                requestWakeLock();
-                updateDisplay();
-                timer = setInterval(tick, 1000);
-            } else {
-                // Switch interface state representation mapping down to standard pause configuration profiles
-                isRunning = false;
-                startBtn.innerText = "RESUME";
-                startBtn.style.backgroundColor = "#34c759";
-                clearInterval(timer);
-                releaseWakeLock();
-            }
-        });
-
-        cancelBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            clearInterval(timer);
-            alarmSound.pause();
-            alarmSound.currentTime = 0;
-            isRunning = false;
-            
-            // Clean view restoration updates mapping
-            editMode.style.display = 'flex';
-            display.style.display = 'none';
-            startBtn.innerText = "START";
-            startBtn.style.backgroundColor = "#34c759";
-            cancelBtn.style.opacity = '0.5';
-            cancelBtn.style.pointerEvents = 'none';
-            releaseWakeLock();
-        });
-
-        function tick() {
-            if (totalSeconds <= 0) {
-                clearInterval(timer);
-                
-                // Fire audio asset alert with local synthesized browser audio context fallback tracking security overrides
-                alarmSound.play().catch(() => {
-                    let ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    let osc = ctx.createOscillator();
-                    osc.connect(ctx.destination);
-                    osc.start();
-                    setTimeout(() => osc.stop(), 2000);
-                });
-                
-                alert("Time is Up!");
-                cancelBtn.click();
-            } else {
-                totalSeconds--;
-                updateDisplay();
-            }
-        }
-
-        function updateDisplay() {
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const s = totalSeconds % 60;
-            display.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        }
-
-        // Initialize 10s inactivity tracking cycle initialization profile loops configurations
-        resetIdleTimer();
-
-        // --- 4. Service Worker Background Operations Registration ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Offline PWA Service Worker Registered:', reg))
-                    .catch(err => console.log('Offline PWA Registration Failed:', err));
-            });
-        }
-    </script>
-</body>
-</html>

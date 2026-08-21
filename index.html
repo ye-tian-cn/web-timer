@@ -68,6 +68,7 @@
         let totalSeconds = 0;
         let isRunning = false;
         let wakeLock = null;
+        let alarmTimeout = null;
 
         // Document Object Model node maps
         const display = document.getElementById('display');
@@ -76,6 +77,16 @@
         const cancelBtn = document.getElementById('cancel-btn');
         const dimOverlay = document.getElementById('dim-overlay');
         const alarmSound = document.getElementById('alarm-sound');
+
+        // Function to stop alarm sound and reset
+        function stopAlarm() {
+            alarmSound.pause();
+            alarmSound.currentTime = 0;
+            if (alarmTimeout) {
+                clearTimeout(alarmTimeout);
+                alarmTimeout = null;
+            }
+        }
 
         // --- 1. Prevent Phone Sleep (Screen Wake Lock API) ---
         async function requestWakeLock() {
@@ -109,29 +120,35 @@
         // --- 3. Core Timer Thread Controls Engine ---
         startBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Avoid triggering immediate dimming wake cycles on button click
+
+            // Stop alarm if it's playing when restart is clicked
+            stopAlarm();
+
             if (!isRunning) {
                 // Initialize countdown parameters out of standard form variables values data
-                if (startBtn.innerText === "START") {
-                    const h = parseInt(document.getElementById('hrs').value) || 0;
-                    const m = parseInt(document.getElementById('mins').value) || 0;
-                    const s = parseInt(document.getElementById('secs').value) || 0;
-                    totalSeconds = (h * 3600) + (m * 60) + s;
+                if (startBtn.innerText === "START" || startBtn.innerText === "RESUME") {
+                    if (startBtn.innerText === "START") {
+                        const h = parseInt(document.getElementById('hrs').value) || 0;
+                        const m = parseInt(document.getElementById('mins').value) || 0;
+                        const s = parseInt(document.getElementById('secs').value) || 0;
+                        totalSeconds = (h * 3600) + (m * 60) + s;
 
-                    // Intercept empty countdown configurations cleanly
-                    if (totalSeconds <= 0) return;
+                        // Intercept empty countdown configurations cleanly
+                        if (totalSeconds <= 0) return;
 
-                    // Dynamically swap user focus fields panels
-                    editMode.style.display = 'none';
-                    display.style.display = 'block';
-                    cancelBtn.style.opacity = '1';
-                    cancelBtn.style.pointerEvents = 'auto';
+                        // Dynamically swap user focus fields panels
+                        editMode.style.display = 'none';
+                        display.style.display = 'block';
+                        cancelBtn.style.opacity = '1';
+                        cancelBtn.style.pointerEvents = 'auto';
+                    }
                 }
 
                 // Switch action toggle status definitions over to PAUSE runtime structures
                 isRunning = true;
                 startBtn.innerText = "PAUSE";
                 startBtn.style.backgroundColor = "#ff9500";
-                
+
                 requestWakeLock();
                 updateDisplay();
                 timer = setInterval(tick, 1000);
@@ -148,8 +165,7 @@
         cancelBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             clearInterval(timer);
-            alarmSound.pause();
-            alarmSound.currentTime = 0;
+            stopAlarm();
             isRunning = false;
             
             // Clean view restoration updates mapping
@@ -165,7 +181,7 @@
         function tick() {
             if (totalSeconds <= 0) {
                 clearInterval(timer);
-                
+
                 // Fire audio asset alert with local synthesized browser audio context fallback tracking security overrides
                 alarmSound.play().catch(() => {
                     let ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -174,9 +190,12 @@
                     osc.start();
                     setTimeout(() => osc.stop(), 2000);
                 });
-                
-                alert("Time is Up!");
-                cancelBtn.click();
+
+                // Stop alarm after 1 minute (60000ms)
+                alarmTimeout = setTimeout(() => {
+                    alarmSound.pause();
+                    alarmSound.currentTime = 0;
+                }, 60000);
             } else {
                 totalSeconds--;
                 updateDisplay();

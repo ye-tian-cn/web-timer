@@ -66,3 +66,8 @@ To maintain a clean production branch, your repository folder tree should only c
 ├── sw.js            # Service Worker Background Cache Catcher Script Handling Offline Access
 └── radar.mp3        # Your Custom Alert Sound File (Must match this exact file name format)
 ```
+
+<img width="1435" height="671" alt="2026-08-21_11h59_55" src="https://github.com/user-attachments/assets/e914e88a-85cb-4113-93e1-345b7d79d25e" />
+<img width="1502" height="685" alt="2026-08-21_11h59_49" src="https://github.com/user-attachments/assets/d9121310-8514-4241-b3f0-0e193d366ce3" />
+<img width="1198" height="531" alt="2026-08-21_11h59_31" src="https://github.com/user-attachments/assets/e3803a38-2c32-4448-a192-e4b24b43c15b" />
+
